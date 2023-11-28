@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import Spinner from "react-bootstrap/Spinner";
 import Post from "./Post";
 import { useApi } from "../contexts/ApiProvider";
+import More from "./More";
 
 const Posts = ({ content }) => {
   const [posts, setPosts] = useState();
+  const [pagination, setPagination] = useState();
   const api = useApi();
 
   let url;
@@ -26,12 +28,23 @@ const Posts = ({ content }) => {
       const response = await api.get(url);
       if (response.ok) {
         setPosts(response.body.data);
+        setPagination(response.body.pagination);
       }
       else {
         setPosts(null);
       }
     })()
   }, [api, url]);
+
+  const loadNextPage = async () => {
+    const response = await api.get(url, {
+      after: posts[posts.length - 1].timestamp
+    })
+    if (response.ok) {
+      setPosts([...posts, ...response.body.data]);
+      setPagination(response.body.pagination)
+    }
+  }
 
   return (
     <>
@@ -48,6 +61,7 @@ const Posts = ({ content }) => {
                 :
                 posts.map(post => <Post key={post.id} post={post} />)
               }
+              <More pagination={pagination} loadNextPage={loadNextPage} />
             </>
           }
         </>
