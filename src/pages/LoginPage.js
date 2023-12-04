@@ -1,20 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
 import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import Body from "../components/Body";
 import InputField from '../components/InputField';
+import { useUser } from '../contexts/UserProvider';
+import { useFlash } from '../contexts/FlashProvider';
 
 const LoginPage = () => {
   const [formErrors, setFormErrors] = useState({});
   const usernameField = useRef();
   const passwordField = useRef();
+  const { login } = useUser();
+  const flash = useFlash();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     usernameField.current.focus();
   }, []);
 
-  const onSubmit = (ev) => {
+  const onSubmit = async (ev) => {
     ev.preventDefault();
     const username = usernameField.current.value;
     const password = passwordField.current.value;
@@ -31,7 +37,17 @@ const LoginPage = () => {
       return;
     }
 
-    console.log(`You entered ${username}:${password}`);
+    const result = await login(username, password);
+    if (result === 'fail') {
+      flash('Invalid username or password', 'danger');
+    }
+    else if (result === 'ok') {
+      let next = '/';
+      if (location.state && location.state.next) {
+        next = location.state.next;
+      }
+      navigate(next);
+    }
   }
 
   return (
